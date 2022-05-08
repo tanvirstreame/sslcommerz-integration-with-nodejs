@@ -28,9 +28,7 @@ app.get('/ssl-request', async (req, res) => {
   * Create ssl session request 
   */
 
-  const payment = await new SSLCommerzPayment({
-    store_id: process.env.STORE_ID,
-    store_passwd: process.env.STORE_PASSWORD,
+  const data = {
     total_amount: 100,
     currency: 'BDT',
     tran_id: 'REF123',
@@ -57,16 +55,24 @@ app.get('/ssl-request', async (req, res) => {
     value_c: 'ref003_C',
     value_d: 'ref004_D',
     ipn_url: `${process.env.ROOT}/ssl-payment-notification`,
-  }, false);
+  };
 
-  if (payment) {
-    return res.status(200).redirect(payment?.GatewayPageURL);
-  }
-  else {
-    return res.status(400).json({
-      message: "Session was not successful"
-    });
-  }
+  const sslcommerz = new SSLCommerzPayment(process.env.STORE_ID, process.env.STORE_PASSWORD, false) //true for live default false for sandbox
+  sslcommerz.init(data).then(data => {
+
+    //process the response that got from sslcommerz 
+    //https://developer.sslcommerz.com/doc/v4/#returned-parameters
+
+    if (data?.GatewayPageURL) {
+      return res.status(200).redirect(data?.GatewayPageURL);
+    }
+    else {
+      return res.status(400).json({
+        message: "Session was not successful"
+      });
+    }
+  });
+
 });
 
 app.post("/ssl-payment-notification", async (req, res) => {
